@@ -30,8 +30,8 @@ var ns = {
 
 
 var config = {
-  //base: 'http://www.markus-lanthaler.com',
-  base: 'http://localhost:8080',
+  base: 'http://www.markus-lanthaler.com',
+  //base: 'http://localhost:8080',
   user: 'hydracore',
   email: 'hydracore@test.com',
   password: '123456'

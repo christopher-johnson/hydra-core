@@ -42,7 +42,10 @@ hydra.documentFromResponse = function (response) {
 
 
 hydra.loadDocument = function (url) {
-  return hydra.httpClient.request('GET', url)
+    var headers = {
+        'Accept': 'application/ld+json'
+    };
+  return hydra.httpClient.request('GET', url, headers)
     .then(function (response) {
       return hydra.documentFromResponse(response, url);
     });
@@ -224,11 +227,11 @@ hydra.Document = function (api, def, iri) {
 hydra.Class = function (api, def) {
   var self = this;
 
-  this.api = api;
-  this.iri = def['@id'];
-  this.label = def.label;
+  self.api = api;
+  self.iri = def['@id'];
+  _.extend(self, def)
 
-  this.init = function () {
+  self.init = function () {
     return Promise.resolve().then(function () {
       self.operations = utils.toArray(def.supportedOperation).map(function (operationDef) {
         return self.api.findOperation(operationDef['@id']);
@@ -246,7 +249,7 @@ hydra.Class = function (api, def) {
     });
   };
 
-  this.validate = hydra.defaults.validateClass;
+  self.validate = hydra.defaults.validateClass;
 };
 
 
@@ -275,16 +278,16 @@ hydra.ClassDocument = function (document, abstract, def) {
 hydra.Operation = function (api, def) {
   var self = this;
 
-  this.api = api;
-  this.iri = def['@id'];
-  this.label = def.label;
+  self.api = api;
+  self.iri = def['@id'];
+  _.extend(self, def)
 
-  this.init = function () {
+  self.init = function () {
     return Promise.resolve().then(function () {
       self.method = def.method;
       self.statusCodes = def.statusCodes;
-      self.expects = self.api.findClass(def.expects);
-      self.returns = self.api.findClass(def.returns);
+      self.expects = self.api.findClass(utils.iri(def.expects));
+      self.returns = self.api.findClass(utils.iri(def.returns));
 
       return self;
     });
@@ -309,19 +312,16 @@ hydra.OperationDocument = function (document, abstract, def) {
 hydra.Property = function (api, def) {
   var self = this;
 
-  this.api = api;
-  this.iri = utils.iri(def.property);
-  this.title = def.title;
-  this.description = def.description;
-  this.label = def.label;
-  this.readonly = def.readonly;
-  this.writeonly = def.writeonly;
-  this.operations = utils.toArray(def.property.supportedOperation)
+  self.api = api;
+  self.iri = utils.iri(def.property);
+  _.extend(self, def)
+
+  self.operations = utils.toArray(def.property.supportedOperation)
     .map(function (operationDef) {
       return self.api.findOperation(utils.iri(operationDef));
     });
 
-  this.findOperation = _.find.bind(null, this.operations, 'method');
+  self.findOperation = _.find.bind(null, self.operations, 'method');
 };
 
 
@@ -364,6 +364,7 @@ hydra.document = function (api, json, base) {
 
 
 module.exports = hydra;
+
 },{"./utils":5}],3:[function(require,module,exports){
 var
   hydra = require('./core'),
@@ -972,11 +973,11 @@ utils.iri = function (obj) {
  * @returns {boolean}
  */
 utils.isCollection = function (collection) {
-  if (_.isObject(collection)) {
+  if (!_.isObject(collection)) {
     return false;
   }
 
-  if (!collection.member && !(ns.member in collection)) {
+  if (!collection.member && !('http://www.w3.org/ns/hydra/core#member' in collection)) {
     return false;
   }
 

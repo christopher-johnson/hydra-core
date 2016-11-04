@@ -41,7 +41,10 @@ hydra.documentFromResponse = function (response) {
 
 
 hydra.loadDocument = function (url) {
-  return hydra.httpClient.request('GET', url)
+    var headers = {
+        'Accept': 'application/ld+json'
+    };
+  return hydra.httpClient.request('GET', url, headers)
     .then(function (response) {
       return hydra.documentFromResponse(response, url);
     });
